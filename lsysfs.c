@@ -29,7 +29,25 @@ int curr_file_idx = -1;
 
 char files_content[ 256 ][ 256 ];
 int curr_file_content_idx = -1;
+/* START */
+//Implementation
 
+void remove_file( const char *filename )
+{
+	curr_file_idx--;
+	strcpy( files_list[ curr_file_idx ], filename );
+	
+	curr_file_content_idx--;
+	strcpy( files_content[ curr_file_content_idx ], "" );
+}
+
+void remove_dir( const char *dir_name )
+{
+	curr_dir_idx--;
+	strcpy( dir_list[ curr_dir_idx ], dir_name );
+}
+
+/* END */
 void add_dir( const char *dir_name )
 {
 	curr_dir_idx++;
@@ -46,6 +64,7 @@ int is_dir( const char *path )
 	
 	return 0;
 }
+
 
 void add_file( const char *filename )
 {
@@ -147,6 +166,36 @@ static int do_read( const char *path, char *buffer, size_t size, off_t offset, s
 	return strlen( content ) - offset;
 }
 
+
+/* START */
+//Implementation
+static int do_unlink(const char *path){
+	path--;
+	remove_file(path);
+	return 0;
+}
+
+
+static int do_utime ( const char *path ,struct utimbuf* timebuf){
+	return 0;
+}
+
+static int do_create ( const char *path ,mode_t mode ,struct fuse_file_info *info){
+	
+	path++;
+	add_file(path);
+	return 0;
+}
+
+static int do_rmdir( const char *path ){
+	path--;
+	remove_dir( path );
+	
+	return 0;
+}
+
+/* END */
+
 static int do_mkdir( const char *path, mode_t mode )
 {
 	path++;
@@ -172,11 +221,15 @@ static int do_write( const char *path, const char *buffer, size_t size, off_t of
 
 static struct fuse_operations operations = {
     .getattr	= do_getattr,
-    .readdir	= do_readdir,
-    .read		= do_read,
-    .mkdir		= do_mkdir,
-    .mknod		= do_mknod,
-    .write		= do_write,
+    .readdir	= do_readdir, // ls
+    .read		= do_read, // cat
+    .mkdir		= do_mkdir, //mkdir
+    .mknod		= do_mknod, //mknod
+    .write		= do_write, // echo
+	.rmdir		= do_rmdir, // rmdir
+	.create		= do_create, //touch
+	.utime		= do_utime, // touch correlates
+	.unlink		= do_unlink, // rm
 };
 
 int main( int argc, char *argv[] )
